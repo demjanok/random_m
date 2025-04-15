@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+  {{ super() }}
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+{% endblock %}
+
+{% block content %}
+  <div class="container mt-5">
+    <div class="row">
+      <!-- Left column: Poster -->
+      <div class="col-md-3">
+        <img src="{{ url_for('static', filename='video/' ~ video.title_original ~ '/poster.png') }}"
+             class="img-fluid rounded shadow-sm" alt="Poster {{ video.title_original }}">
+      </div>
+
+      <!-- Right column: info -->
+      <div class="col-md-9">
+        <h1>{{ video.title }}</h1>
+        <h4 class="text-muted">{{ video.title_original[0]|upper ~ video.title_original[1:] }}</h4>
+        <p><strong>Рік:</strong> {{ video.year }}</p>
+        <p><strong>Жанр:</strong> {{ video.genre }}</p>
+
+        {% if video.imdb_rating and video.imdb_url %}
+          <a href="{{ video.imdb_url }}" target="_blank"
+             class="badge bg-warning text-dark text-decoration-none mb-2 d-inline-block">
+            IMDB {{ video.imdb_rating }}
+          </a>
+        {% endif %}
+
+        {% if video.description %}
+          <p class="text-muted">{{ video.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Video Player -->
+    <div class="mt-4">
+      <video id="player" class="w-100 rounded" controls playsinline>
+        <source src="{{ url_for('static', filename='video/' ~ video.title_original ~ '/480.mp4') }}" type="video/mp4" data-quality="480">
+        <source src="{{ url_for('static', filename='video/' ~ video.title_original ~ '/720.mp4') }}" type="video/mp4" data-quality="720">
+        <source src="{{ url_for('static', filename='video/' ~ video.title_original ~ '/1080.mp4') }}" type="video/mp4" data-quality="1080">
+        Your browser does not support the video tag.
+      </video>
+
+      <div class="text-end mb-2 mt-2">
+        <label for="qualitySelect" class="form-label">Якість відео:</label>
+        <select id="qualitySelect" class="form-select w-auto d-inline-block ms-2">
+          <option value="480">480p</option>
+          <option value="720">720p</option>
+          <option value="1080">1080p</option>
+        </select>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script>
+      const player = new Plyr('#player');
+      const qualitySelect = document.getElementById('qualitySelect');
+      const videoElement = document.getElementById('player');
+
+      qualitySelect.addEventListener('change', () => {
+        const selectedQuality = qualitySelect.value;
+        const sources = videoElement.querySelectorAll('source');
+
+        const newSource = Array.from(sources).find(source =>
+          source.getAttribute('data-quality') === selectedQuality
+        );
+
+        if (newSource) {
+          const currentTime = player.currentTime;
+          const isPlaying = !player.paused;
+
+          player.pause();
+          videoElement.src = newSource.getAttribute('src');
+          videoElement.load();
+
+          videoElement.onloadedmetadata = () => {
+            player.currentTime = currentTime;
+            if (isPlaying) {
+              player.play();
+            }
+          };
+        }
+      });
+    </script>
+{% endblock %}

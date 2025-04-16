@@ -13,7 +13,7 @@
         {% for video in videos %}
           <option value="{{ video.id }}"
             {% if selected_video and video.id == selected_video.id %}selected{% endif %}>
-            {{ video.id }} — {{ video.title_original }} — {{ video.year }}
+            {{ video.title_original }} {{ video.year }}
           </option>
         {% endfor %}
       </select>

@@ -23,3 +23,8 @@ class Video(db.Model):
     imdb_url = db.Column(db.String(120), nullable=False)
     imdb_rating = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
+
+class Users(db.Model):
+    __tablename__ = 'users'
+    user = db.Column(db.String(20), primary_key=True)
+    passwd = db.Column(db.String(128))

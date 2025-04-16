@@ -1,8 +1,8 @@
 import os
-from flask import Flask, request, render_template, flash, redirect, url_for, abort
+from flask import Flask, request, render_template, flash, redirect, url_for, abort, session
 from datetime import datetime
 
-from helpers.generic import create_table
+from helpers.generic import hash_passwd
 from models import db, Article, Video
 import json
 
@@ -29,13 +29,31 @@ def main():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    from models import Users
     if request.method == 'POST':
-        return 'Login successful!'
+        username = request.form['username']
+        password = request.form['password']
+        hashed = hash_passwd(password)
+
+        user = Users.query.filter_by(user=username, passwd=hashed).first()
+
+        if user:
+            session['user'] = user.user
+            flash('Login successful!', 'success')
+            return redirect(url_for('admin'))
+        else:
+            flash('Invalid login or password!', 'danger')
+            return redirect(url_for('login'))
+
     return render_template('login.html')
 
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    if 'user' not in session:
+        flash("Login required")
+        return redirect(url_for('login'))
+
     from models import Video
 
     videos = Video.query.all()
@@ -44,7 +62,7 @@ def admin():
 
     if request.method == 'POST':
         if 'create' in request.form:
-            # Створити новий запис
+            # New video
             new_video = Video(
                 title=request.form.get('title'),
                 title_original=request.form.get('title_original'),
@@ -57,9 +75,9 @@ def admin():
             db.session.add(new_video)
             db.session.commit()
             message = '✅ Нове відео створено!'
-            videos = Video.query.all()  # оновити список
+            videos = Video.query.all()  # update list
         elif 'save' in request.form:
-            # Зберегти існуюче
+            # Save
             selected_id = request.form.get('video_id')
             selected_video = Video.query.get(selected_id)
             if selected_video:
@@ -79,7 +97,6 @@ def admin():
     return render_template('admin.html', videos=videos, selected_video=selected_video, message=message)
 
 
-
 @app.route('/video/<string:slug>')
 def video_detail(slug):
     from models import Video
@@ -90,14 +107,17 @@ def video_detail(slug):
     return render_template('video.html', video=video)
 
 
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    flash('You are logged out')
+    return redirect(url_for('login'))
+
+
 @app.errorhandler(404)
 def _404(e):
     return render_template('404.html')
 
 
 if __name__ == '__main__':
-    if not os.path.exists(db_filepath):
-        with open(db_filepath, 'w') as f:
-            create_table(db_filepath)
-
     app.run(host='0.0.0.0', port=8000, debug=True)

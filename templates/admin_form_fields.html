@@ -32,3 +32,8 @@
   <label>Description:</label>
   <textarea name="description" class="form-control" rows="3">{{ selected_video.description if selected_video else '' }}</textarea>
 </div>
+
+<div class="mb-3">
+    <label for="logo" class="form-label">Logo (PNG):</label>
+    <input type="file" class="form-control" name="logo" accept="image/*">
+</div>

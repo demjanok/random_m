@@ -1,12 +1,8 @@
 import os
 from flask import Flask, request, render_template, flash, redirect, url_for, abort, session
-from datetime import datetime
 
 from helpers.generic import hash_passwd
 from models import db, Article, Video
-import json
-
-
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -16,9 +12,15 @@ app.config['SECRET_KEY'] = '123'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-
 with app.app_context():
-    db.create_all()
+    db.create_all() # only for debug purpose
+
+
+UPLOAD_FOLDER = os.path.join(app.static_folder, 'video')
+ALLOWED_EXTENSIONS = {'png'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/')
@@ -63,9 +65,11 @@ def admin():
     if request.method == 'POST':
         if 'create' in request.form:
             # New video
+            title_original = request.form.get('title_original')
+
             new_video = Video(
                 title=request.form.get('title'),
-                title_original=request.form.get('title_original'),
+                title_original=title_original,
                 year=int(request.form.get('year') or 0),
                 genre=request.form.get('genre'),
                 imdb_url=request.form.get('imdb_url'),
@@ -74,10 +78,19 @@ def admin():
             )
             db.session.add(new_video)
             db.session.commit()
+
+            # 🖼️ Save logo if uploaded
+            logo_file = request.files.get('logo')
+            if logo_file and allowed_file(logo_file.filename):
+                folder_path = os.path.join(UPLOAD_FOLDER, title_original)
+                os.makedirs(folder_path, exist_ok=True)
+                logo_path = os.path.join(folder_path, 'poster.png')
+                logo_file.save(logo_path)
+
             message = '✅ Нове відео створено!'
-            videos = Video.query.all()  # update list
+            videos = Video.query.all()
+
         elif 'save' in request.form:
-            # Save
             selected_id = request.form.get('video_id')
             selected_video = Video.query.get(selected_id)
             if selected_video:
@@ -89,6 +102,14 @@ def admin():
                 selected_video.imdb_rating = request.form.get('imdb_rating')
                 selected_video.description = request.form.get('description')
                 db.session.commit()
+
+                # 🖼️ Save logo if uploaded
+                logo_file = request.files.get('logo')
+                if logo_file and allowed_file(logo_file.filename):
+                    folder_path = os.path.join(UPLOAD_FOLDER, selected_video.title_original)
+                    os.makedirs(folder_path, exist_ok=True)
+                    logo_path = os.path.join(folder_path, 'poster.png')
+                    logo_file.save(logo_path)
                 message = '✅ Зміни збережено!'
         else:
             selected_id = request.form.get('video_id')
@@ -117,6 +138,7 @@ def logout():
 @app.errorhandler(404)
 def _404(e):
     return render_template('404.html')
+
 
 
 if __name__ == '__main__':

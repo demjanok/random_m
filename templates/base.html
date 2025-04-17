@@ -41,6 +41,10 @@
                 {% if session.user %}
                     <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
                 {% endif %}
+
+                {% if session.user %}
+                    <li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
+                {% endif %}
             </ul>
         </div>
     </div>

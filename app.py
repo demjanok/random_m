@@ -1,8 +1,14 @@
 import os
+
 from flask import Flask, request, render_template, flash, redirect, url_for, abort, session
+from PIL import Image
+from werkzeug.utils import secure_filename
 
 from helpers.generic import hash_passwd
 from models import db, Article, Video
+
+# Constants here
+UPLOAD_FOLDER = 'static/video/'
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -16,11 +22,16 @@ with app.app_context():
     db.create_all() # only for debug purpose
 
 
-UPLOAD_FOLDER = os.path.join(app.static_folder, 'video')
-ALLOWED_EXTENSIONS = {'png'}
+def save_poster(file, folder_name):
+    if file and file.filename:
+        filename = secure_filename('poster.webp')
+        save_path = os.path.join(UPLOAD_FOLDER, folder_name)
+        os.makedirs(save_path, exist_ok=True)
+        full_path = os.path.join(save_path, filename)
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+        # Convert to webp
+        image = Image.open(file.stream)
+        image.save(full_path, format='WEBP', quality=85)
 
 
 @app.route('/')
@@ -56,8 +67,6 @@ def admin():
         flash("Login required")
         return redirect(url_for('login'))
 
-    from models import Video
-
     videos = Video.query.all()
     selected_video = None
     message = ''
@@ -80,12 +89,9 @@ def admin():
             db.session.commit()
 
             # 🖼️ Save logo if uploaded
-            logo_file = request.files.get('logo')
-            if logo_file and allowed_file(logo_file.filename):
-                folder_path = os.path.join(UPLOAD_FOLDER, title_original)
-                os.makedirs(folder_path, exist_ok=True)
-                logo_path = os.path.join(folder_path, 'poster.png')
-                logo_file.save(logo_path)
+            poster_file = request.files.get('poster')
+            if poster_file:
+                save_poster(poster_file, new_video.url)
 
             message = '✅ Нове відео створено!'
             videos = Video.query.all()
@@ -104,12 +110,10 @@ def admin():
                 db.session.commit()
 
                 # 🖼️ Save logo if uploaded
-                logo_file = request.files.get('logo')
-                if logo_file and allowed_file(logo_file.filename):
-                    folder_path = os.path.join(UPLOAD_FOLDER, selected_video.url)
-                    os.makedirs(folder_path, exist_ok=True)
-                    logo_path = os.path.join(folder_path, 'poster.png')
-                    logo_file.save(logo_path)
+                poster_file = request.files.get('poster')
+                if poster_file and selected_video:
+                    save_poster(poster_file, selected_video.url)
+
                 message = '✅ Зміни збережено!'
         else:
             selected_id = request.form.get('video_id')
@@ -120,8 +124,7 @@ def admin():
 
 @app.route('/video/<string:slug>')
 def video_detail(slug):
-    from models import Video
-    video = Video.query.filter_by(title_original=slug).first()
+    video = Video.query.filter_by(url=slug).first()
     if not video:
         abort(404)
     #genres = json.loads(video.genre) if video.genre else []
@@ -138,7 +141,6 @@ def logout():
 @app.errorhandler(404)
 def _404(e):
     return render_template('404.html')
-
 
 
 if __name__ == '__main__':

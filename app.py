@@ -106,7 +106,7 @@ def admin():
                 # 🖼️ Save logo if uploaded
                 logo_file = request.files.get('logo')
                 if logo_file and allowed_file(logo_file.filename):
-                    folder_path = os.path.join(UPLOAD_FOLDER, selected_video.title_original)
+                    folder_path = os.path.join(UPLOAD_FOLDER, selected_video.url)
                     os.makedirs(folder_path, exist_ok=True)
                     logo_path = os.path.join(folder_path, 'poster.png')
                     logo_file.save(logo_path)

@@ -1,11 +1,15 @@
 import os
 
 from flask import Flask, request, render_template, flash, redirect, url_for, abort, session
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
+from flask_admin import AdminIndexView, expose
+from flask_admin.form import FileUploadField
 from PIL import Image
 from werkzeug.utils import secure_filename
 
 from helpers.generic import hash_passwd
-from models import db, Article, Video
+from models import db, Article, Video, Users
 
 # Constants here
 UPLOAD_FOLDER = 'static/video/'
@@ -20,6 +24,57 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 with app.app_context():
     db.create_all() # only for debug purpose
+
+
+# Check access
+class MyAdminIndexView(AdminIndexView):
+    @expose('/')
+    def index(self):
+        if 'user' not in session:
+            return redirect(url_for('login'))
+        return super().index()
+
+class SecureModelView(ModelView):
+    def is_accessible(self):
+        return 'user' in session
+
+class VideoAdminView(ModelView):
+    form_excluded_columns = ('date_posted', 'video_present', 'url')
+
+    poster_path = os.path.join(os.path.dirname(__file__), 'static', 'posters')
+    form_extra_fields = {
+        'poster': FileUploadField(
+            'Poster',
+            base_path=poster_path,
+            namegen=lambda obj, file_data: secure_filename(obj.url + '.webp')
+        )
+    }
+
+    def on_model_change(self, form, model, is_created):
+        from helpers.generic import transliterate_to_snake
+
+        # generate url
+        if not model.url:
+            model.url = transliterate_to_snake(model.title_original)
+
+        # load poster
+        poster_file = form.poster.data
+        if poster_file:
+            filename = secure_filename(model.url + ".webp")
+            filepath = os.path.join('static', 'posters', filename)
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+            # convert and save
+            img = Image.open(poster_file)
+            img.convert("RGB").save(filepath, "WEBP", quality=85)
+
+
+
+# Initialize
+admin = Admin(app, name='Video Admin', template_mode='bootstrap4', index_view=MyAdminIndexView())
+admin.add_view(VideoAdminView(Video, db.session))
+admin.add_view(SecureModelView(Article, db.session))
+admin.add_view(SecureModelView(Users, db.session))
 
 
 def save_poster(file, folder_name):
@@ -61,7 +116,7 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin_custom', methods=['GET', 'POST'])
 def admin():
     if 'user' not in session:
         flash("Login required")

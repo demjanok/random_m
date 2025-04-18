@@ -41,12 +41,12 @@ class Video(db.Model):
 @event.listens_for(Video, 'before_insert')
 def generate_url(mapper, connection, target):
     if not target.url:
-        target.url = transliterate_to_snake(target.title)
+        target.url = transliterate_to_snake(target.title_original)
 
 # Update url when title
 @event.listens_for(Video, 'before_update')
 def update_url(mapper, connection, target):
-    target.url = transliterate_to_snake(target.title)
+    target.url = transliterate_to_snake(target.title_original)
 
 
 class Users(db.Model):
@@ -54,3 +54,4 @@ class Users(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user = db.Column(db.String(20))
     passwd = db.Column(db.String(128))
+

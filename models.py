@@ -2,11 +2,14 @@ from datetime import datetime
 import uuid
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy import event
 
 from helpers.generic import transliterate_to_snake
 
 db = SQLAlchemy()
+
+roles = ('guest', 'user', 'editor', 'moderator', 'admin', 'owner', 'banned')
 
 
 class Article(db.Model):
@@ -25,7 +28,7 @@ class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     title_original = db.Column(db.String(120))
-    country = db.Column(db.Integer)
+    country = db.Column(db.String(120))
     year = db.Column(db.Integer)
     genre = db.Column(db.Text, default='[]')
     director = db.Column(db.String(120))
@@ -52,6 +55,8 @@ def update_url(mapper, connection, target):
 class Users(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user = db.Column(db.String(20))
+    user = db.Column(db.String(20), unique=True)
     passwd = db.Column(db.String(128))
+    email = db.Column(db.String(254), unique=True)
+    role = db.Column(ENUM(*roles, name="user_roles"), default='user')
 

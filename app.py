@@ -1,15 +1,10 @@
 import os
 
 from flask import Flask, request, render_template, flash, redirect, url_for, abort, session
-from PIL import Image
-from werkzeug.utils import secure_filename
 
 from admin import init_admin
 from helpers.generic import hash_passwd
 from models import db, Article, Video, Users
-
-# Constants here
-UPLOAD_FOLDER = 'static/video/'
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -22,18 +17,6 @@ db.init_app(app)
 with app.app_context():
     db.create_all() # only for debug purpose
     init_admin(app, db)
-
-
-def save_poster(file, folder_name):
-    if file and file.filename:
-        filename = secure_filename('poster.webp')
-        save_path = os.path.join(UPLOAD_FOLDER, folder_name)
-        os.makedirs(save_path, exist_ok=True)
-        full_path = os.path.join(save_path, filename)
-
-        # Convert to webp
-        image = Image.open(file.stream)
-        image.save(full_path, format='WEBP', quality=85)
 
 
 @app.route('/')
@@ -68,7 +51,6 @@ def video_detail(slug):
     video = Video.query.filter_by(url=slug).first()
     if not video:
         abort(404)
-    #genres = json.loads(video.genre) if video.genre else []
     return render_template('video.html', video=video)
 
 

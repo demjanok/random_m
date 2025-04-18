@@ -1,4 +1,5 @@
 import os
+
 from flask import session, redirect, url_for
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
@@ -28,6 +29,14 @@ class SecureModelView(ModelView):
 # 🎥 Custom Video admin
 class VideoAdminView(SecureModelView):
     form_excluded_columns = ('date_posted', 'video_present', 'url')
+    form_columns = ('title', 'title_original', 'year', 'genre', 'description',
+                    'imdb_url', 'imdb_rating', 'poster', 'url', 'date_posted', 'video_present')
+
+    form_widget_args = {
+        'url': {'readonly': True},
+        'date_posted': {'readonly': True},
+        'video_present': {'readonly': True}
+    }
 
     poster_path = os.path.join('static', 'posters')
     form_extra_fields = {

@@ -63,67 +63,6 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/admin_custom', methods=['GET', 'POST'])
-def admin():
-    if 'user' not in session:
-        flash("Login required")
-        return redirect(url_for('login'))
-
-    videos = Video.query.all()
-    selected_video = None
-    message = ''
-
-    if request.method == 'POST':
-        if 'create' in request.form:
-            # New video
-            title_original = request.form.get('title_original')
-
-            new_video = Video(
-                title=request.form.get('title'),
-                title_original=title_original,
-                year=int(request.form.get('year') or 0),
-                genre=request.form.get('genre'),
-                imdb_url=request.form.get('imdb_url'),
-                imdb_rating=request.form.get('imdb_rating'),
-                description=request.form.get('description')
-            )
-            db.session.add(new_video)
-            db.session.commit()
-
-            # 🖼️ Save logo if uploaded
-            poster_file = request.files.get('poster')
-            if poster_file:
-                save_poster(poster_file, new_video.url)
-
-            message = '✅ Нове відео створено!'
-            videos = Video.query.all()
-
-        elif 'save' in request.form:
-            selected_id = request.form.get('video_id')
-            selected_video = Video.query.get(selected_id)
-            if selected_video:
-                selected_video.title = request.form.get('title')
-                selected_video.title_original = request.form.get('title_original')
-                selected_video.year = int(request.form.get('year') or 0)
-                selected_video.genre = request.form.get('genre')
-                selected_video.imdb_url = request.form.get('imdb_url')
-                selected_video.imdb_rating = request.form.get('imdb_rating')
-                selected_video.description = request.form.get('description')
-                db.session.commit()
-
-                # 🖼️ Save logo if uploaded
-                poster_file = request.files.get('poster')
-                if poster_file and selected_video:
-                    save_poster(poster_file, selected_video.url)
-
-                message = '✅ Зміни збережено!'
-        else:
-            selected_id = request.form.get('video_id')
-            selected_video = Video.query.get(selected_id)
-
-    return render_template('admin.html', videos=videos, selected_video=selected_video, message=message)
-
-
 @app.route('/video/<string:slug>')
 def video_detail(slug):
     video = Video.query.filter_by(url=slug).first()

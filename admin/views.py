@@ -17,7 +17,17 @@ class MyAdminIndexView(AdminIndexView):
     def index(self):
         if 'user' not in session:
             return redirect(url_for('login'))
-        return super().index()
+
+        video_count = Video.query.count()
+        user_count = Users.query.count()
+        article_count = Article.query.count()
+        latest_videos = Video.query.order_by(Video.date_posted.desc()).limit(5).all()
+
+        return self.render('admin/index.html',
+                           video_count=video_count,
+                           user_count=user_count,
+                           article_count=article_count,
+                           latest_videos=latest_videos)
 
 
 # 🔒 Base model view with session check

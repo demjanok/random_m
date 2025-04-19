@@ -1,0 +1,21 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+  <div class="container mt-4">
+    <h2>👋 Привіт в адмін-панелі!</h2>
+
+    <p>Станом на зараз:</p>
+    <ul>
+      <li>🎬 Відео в базі: <strong>{{ video_count }}</strong></li>
+      <li>🧑‍💼 Користувачів: <strong>{{ user_count }}</strong></li>
+      <li>📰 Статей: <strong>{{ article_count }}</strong></li>
+    </ul>
+
+    <h4>⏱️ Останні додані фільми:</h4>
+    <ul>
+      {% for video in latest_videos %}
+        <li>{{ video.title_original }} ({{ video.year }})</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

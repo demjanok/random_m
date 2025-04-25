@@ -2,18 +2,15 @@ from datetime import datetime
 import uuid
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import ENUM
-from sqlalchemy import event
+from sqlalchemy import event, Column
 
 from helpers.generic import transliterate_to_snake
 
 db = SQLAlchemy()
 
-roles = ('guest', 'user', 'editor', 'moderator', 'admin', 'owner', 'banned')
-
 
 class Article(db.Model):
-    __tablename__ = 'Article'
+    __tablename__ = 'article'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
@@ -28,17 +25,20 @@ class Video(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     title_original = db.Column(db.String(120))
-    country = db.Column(db.String(120))
+    country = db.Column(db.Text)
     year = db.Column(db.Integer)
-    genre = db.Column(db.Text, default='[]')
+    lists = db.Column(db.Integer)
+    genre = db.Column(db.Text)
     director = db.Column(db.String(120))
     actors = db.Column(db.Text)
     imdb_url = db.Column(db.String(120))
     imdb_rating = db.Column(db.String(3))
     description = db.Column(db.Text)
-    url = db.Column(db.String(150)) # event will create this row automatically
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.now)
     video_present = db.Column(db.Boolean, nullable=False, default=False)
+    PEGI = db.Column(db.Integer)
+    url = db.Column(db.String(150)) # event will create this row automatically
+
 
 # Automatic generate url from title
 @event.listens_for(Video, 'before_insert')
@@ -58,5 +58,7 @@ class Users(db.Model):
     user = db.Column(db.String(20), unique=True)
     passwd = db.Column(db.String(128))
     email = db.Column(db.String(254), unique=True)
-    role = db.Column(ENUM(*roles, name="user_roles"), default='user')
+    # role = db.Column(db.String(20), default='user')
+    # date_of_registration = db.Column(db.DateTime, default=datetime.now)
+
 

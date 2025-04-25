@@ -38,9 +38,8 @@ class SecureModelView(ModelView):
 
 # 🎥 Custom Video admin
 class VideoAdminView(SecureModelView):
-    form_excluded_columns = ('date_posted', 'video_present', 'url')
-    form_columns = ('title', 'title_original', 'year', 'genre', 'description',
-                    'imdb_url', 'imdb_rating', 'poster', 'url', 'date_posted', 'video_present')
+    #form_excluded_columns = ('date_posted', 'video_present', 'url')
+    #form_columns = ('id', 'title', 'title_original', 'year', 'genre', 'date_posted', 'video_present')
 
     form_widget_args = {
         'url': {'readonly': True},

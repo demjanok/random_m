@@ -38,7 +38,7 @@ def login():
         if user:
             session['user'] = user.user
             flash('Login successful!', 'success')
-            return redirect(url_for('admin'))
+            return redirect(url_for('admin.index'))
         else:
             flash('Invalid login or password!', 'danger')
             return redirect(url_for('login'))

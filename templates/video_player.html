@@ -1,0 +1,9 @@
+<!-- templates/video_player.html -->
+<div class="mt-4">
+  <video class="w-100 rounded" controls>
+      <source src="{{ url_for('static', filename='video/' ~ video.url ~ '/' ~ video.url ~ '.mp4') }}" type="video/mp4">
+      <source src="{{ url_for('static', filename='video/' ~ video.url ~ '.webm') }}" type="video/webm">
+      <source src="{{ url_for('static', filename='video/' ~ video.url ~ '.ogv') }}" type="video/ogg">
+      Ваш браузер не підтримує відтворення відео.
+  </video>
+</div>

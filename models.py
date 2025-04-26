@@ -58,7 +58,7 @@ class Users(db.Model):
     user = db.Column(db.String(20), unique=True)
     passwd = db.Column(db.String(128))
     email = db.Column(db.String(254), unique=True)
-    # role = db.Column(db.String(20), default='user')
-    # date_of_registration = db.Column(db.DateTime, default=datetime.now)
+    role = db.Column(db.String(20), default='user')
+    date_of_registration = db.Column(db.DateTime, default=datetime.now)
 
 

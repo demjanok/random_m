@@ -4,6 +4,7 @@ from flask import session, redirect, url_for
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import FileUploadField
+
 from werkzeug.utils import secure_filename
 from PIL import Image
 
@@ -23,11 +24,11 @@ class MyAdminIndexView(AdminIndexView):
         article_count = Article.query.count()
         latest_videos = Video.query.order_by(Video.date_posted.desc()).limit(5).all()
 
-        return self.render('admin/index.html',
-                           video_count=video_count,
-                           user_count=user_count,
-                           article_count=article_count,
-                           latest_videos=latest_videos)
+        return super().render('admin/index.html',
+                              video_count=video_count,
+                              user_count=user_count,
+                              article_count=article_count,
+                              latest_videos=latest_videos)
 
 
 # 🔒 Base model view with session check
@@ -38,7 +39,7 @@ class SecureModelView(ModelView):
 
 # 🎥 Custom Video admin
 class VideoAdminView(SecureModelView):
-    #form_excluded_columns = ('date_posted', 'video_present', 'url')
+    form_excluded_columns = ('date_posted', 'video_present', 'url')
     #form_columns = ('id', 'title', 'title_original', 'year', 'genre', 'date_posted', 'video_present')
 
     form_widget_args = {

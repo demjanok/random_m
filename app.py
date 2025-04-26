@@ -18,6 +18,16 @@ with app.app_context():
     db.create_all() # only for debug purpose
     init_admin(app, db)
 
+    if not Users.query.filter_by(user='admin').first():
+        admin_user = Users(
+            user='admin',
+            passwd=hash_passwd('admin'),
+            email='admin@example.com',
+            role='admin'
+        )
+        db.session.add(admin_user)
+        db.session.commit()
+
 
 @app.route('/')
 def main():

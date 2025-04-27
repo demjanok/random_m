@@ -54,9 +54,11 @@ def update_url(mapper, connection, target):
 
 class Users(db.Model):
     __tablename__ = 'users'
+    #id = db.Column(db.Integer, primary_key=True)
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user = db.Column(db.String(20), unique=True)
     passwd = db.Column(db.String(128))
+    #hashed_passwd = db.Column(db.String(128))
     email = db.Column(db.String(254), unique=True)
     role = db.Column(db.String(20), default='user')
     date_of_registration = db.Column(db.DateTime, default=datetime.now)

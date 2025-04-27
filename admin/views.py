@@ -3,22 +3,21 @@ import os
 from flask import session, redirect, url_for
 from flask_admin import Admin, AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
-from flask_admin.form import FileUploadField
+from flask_admin.form import FileUploadField, BaseForm
 
 from werkzeug.utils import secure_filename
 from PIL import Image
+from wtforms import StringField, PasswordField, SelectField
 
 from models import Video, Article, Users
-from helpers.generic import transliterate_to_snake
+from helpers.generic import transliterate_to_snake, hash_passwd
+from helpers.security_tools import UserRole
 
 
 # 🔒 Index view with session check
 class MyAdminIndexView(AdminIndexView):
     @expose('/')
     def index(self):
-        if 'user' not in session:
-            return redirect(url_for('login'))
-
         video_count = Video.query.count()
         user_count = Users.query.count()
         article_count = Article.query.count()
@@ -37,10 +36,30 @@ class SecureModelView(ModelView):
         return 'user' in session
 
 
+class UserForm(BaseForm):
+    user = StringField('User')
+    email = StringField('Email')
+    role = SelectField('Role', choices=[(role.value, role.value) for role in UserRole])
+    passwd = PasswordField('Password')
+
+class UsersAdminView(SecureModelView):
+    form = UserForm
+
+    def on_model_change(self, form, model, is_created):
+        if form.passwd.data:
+            model.passwd = hash_passwd(form.passwd.data)
+        else:
+            if is_created:
+                raise ValueError("Password is required when creating a new user.")
+            else:
+                existing_user = Users.query.get(model.id)
+                model.passwd = existing_user.passwd
+
+
 # 🎥 Custom Video admin
 class VideoAdminView(SecureModelView):
     form_excluded_columns = ('date_posted', 'video_present', 'url')
-    #form_columns = ('id', 'title', 'title_original', 'year', 'genre', 'date_posted', 'video_present')
+    column_list = ('id', 'title', 'title_original', 'year', 'genre', 'date_posted', 'video_present')
 
     form_widget_args = {
         'url': {'readonly': True},
@@ -74,9 +93,17 @@ class VideoAdminView(SecureModelView):
             model.video_present = True
 
 
+class SecureAdmin(Admin):
+    def is_accessible(self):
+        return 'user' in session
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login'))
+
+
 # 🛠️ Admin setup
 def init_admin(app, db):
-    admin = Admin(app, name='Video Admin', template_mode='bootstrap4', index_view=MyAdminIndexView())
+    admin = SecureAdmin(app, name='Video Admin', template_mode='bootstrap4', index_view=MyAdminIndexView())
     admin.add_view(VideoAdminView(Video, db.session))
     admin.add_view(SecureModelView(Article, db.session))
-    admin.add_view(SecureModelView(Users, db.session))
+    admin.add_view(UsersAdminView(Users, db.session))

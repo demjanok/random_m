@@ -3,6 +3,7 @@ import uuid
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event, Column
+from sqlalchemy.orm import relationship
 
 from helpers.generic import transliterate_to_snake
 
@@ -16,8 +17,22 @@ class Article(db.Model):
     content = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime, default=datetime.now)
 
+    # relations with users
+    author_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    author = relationship('Users', backref='articles')
+
     def __repr__(self):
         return f"Article('{self.title}', '{self.date_posted}')"
+
+
+class Users(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user = db.Column(db.String(20), unique=True)
+    passwd = db.Column(db.String(128))
+    email = db.Column(db.String(254), unique=True)
+    role = db.Column(db.String(20), default='user')
+    date_of_registration = db.Column(db.DateTime, default=datetime.now)
 
 
 class Video(db.Model):
@@ -51,16 +66,5 @@ def generate_url(mapper, connection, target):
 def update_url(mapper, connection, target):
     target.url = transliterate_to_snake(target.title_original)
 
-
-class Users(db.Model):
-    __tablename__ = 'users'
-    #id = db.Column(db.Integer, primary_key=True)
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user = db.Column(db.String(20), unique=True)
-    passwd = db.Column(db.String(128))
-    #hashed_passwd = db.Column(db.String(128))
-    email = db.Column(db.String(254), unique=True)
-    role = db.Column(db.String(20), default='user')
-    date_of_registration = db.Column(db.DateTime, default=datetime.now)
 
 
